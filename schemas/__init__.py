@@ -30,3 +30,8 @@ from schemas.common_schemas import (
     ByPeriodQueryParamSchema,
     ErrorSchema,
 )
+
+from schemas.searcher_schemas import (
+    QuerySchema,
+    SearcherResponse,
+)
