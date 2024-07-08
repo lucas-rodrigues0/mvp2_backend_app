@@ -5,6 +5,7 @@ from flask_openapi3 import APIBlueprint
 from flask_openapi3 import Tag
 from flask import session
 
+from logger import logger
 from schemas import (
     ByUserPathSchema,
     ByPeriodQueryParamSchema,
@@ -70,10 +71,12 @@ forum_bp = APIBlueprint(
 
 @forum_bp.get("/articles", responses={"200": GetArticlesResponse})
 def get_articles():
+    logger.debug("Buscando todos artigos existentes.")
     response = requests.post(url=forum_api_url, json={"query": articles_query})
     article_data = response.json()
 
     if article_data.get("errors"):
+        logger.warning(f"Erro na busca de artigos: {article_data.get("errors")}.")
         return article_data, 400
 
     return article_data["data"], 200
@@ -81,6 +84,7 @@ def get_articles():
 
 @forum_bp.get("/articles/id/<article_id>", responses={"200": GetArticleByIdResponse})
 def get_article_by_id(path: ArticlePathSchema):
+    logger.debug("Buscando artigo pelo seu ID.")
     variables = {"articleID": path.article_id}
 
     response = requests.post(
@@ -89,6 +93,7 @@ def get_article_by_id(path: ArticlePathSchema):
     article_data = response.json()
 
     if article_data.get("errors"):
+        logger.warning(f"Erro na busca de artigos: {article_data.get("errors")}.")
         return article_data, 400
 
     return article_data["data"], 200
@@ -96,6 +101,7 @@ def get_article_by_id(path: ArticlePathSchema):
 
 @forum_bp.get("/articles/user/<user_id>", responses={"200": GetArticleByUserResponse})
 def get_article_by_user_id(path: ByUserPathSchema):
+    logger.debug("Buscando artigo pelo ID do usuário.")
     variables = {"userID": path.user_id}
 
     response = requests.post(
@@ -105,6 +111,7 @@ def get_article_by_user_id(path: ByUserPathSchema):
     article_data = response.json()
 
     if article_data.get("errors"):
+        logger.warning(f"Erro na busca de artigos: {article_data.get("errors")}.")
         return article_data, 400
 
     return article_data["data"], 200
@@ -112,6 +119,7 @@ def get_article_by_user_id(path: ByUserPathSchema):
 
 @forum_bp.get("/articles/period", responses={"200": GetArticleByPeriodResponse})
 def get_article_by_period(query: ByPeriodQueryParamSchema):
+    logger.debug("Buscando artigo pelo periodo em que foi criado.")
     variables = {"initialDate": query.initialDate, "endDate": query.endDate}
 
     response = requests.post(
@@ -121,6 +129,7 @@ def get_article_by_period(query: ByPeriodQueryParamSchema):
     article_data = response.json()
 
     if article_data.get("errors"):
+        logger.warning(f"Erro na busca de artigos: {article_data.get("errors")}.")
         return article_data, 400
 
     return article_data["data"], 200
@@ -128,10 +137,12 @@ def get_article_by_period(query: ByPeriodQueryParamSchema):
 
 @forum_bp.get("/comments", responses={"200": GetCommentsResponse})
 def get_comments():
+    logger.debug("Buscando comentários existentes.")
     response = requests.post(url=forum_api_url, json={"query": comments_query})
     comment_data = response.json()
 
     if comment_data.get("errors"):
+        logger.warning(f"Erro na busca de comentários: {comment_data.get("errors")}.")
         return comment_data, 400
 
     return comment_data["data"], 200
@@ -139,6 +150,7 @@ def get_comments():
 
 @forum_bp.get("/comments/id/<comment_id>", responses={"200": GetCommentByIdResponse})
 def get_comment_by_id(path: CommentPathSchema):
+    logger.debug("Buscando comentário pelo seu ID.")
     variables = {"commentID": path.comment_id}
 
     response = requests.post(
@@ -147,6 +159,7 @@ def get_comment_by_id(path: CommentPathSchema):
     comment_data = response.json()
 
     if comment_data.get("errors"):
+        logger.warning(f"Erro na busca de comentários: {comment_data.get("errors")}.")
         return comment_data, 400
 
     return comment_data["data"], 200
@@ -154,6 +167,7 @@ def get_comment_by_id(path: CommentPathSchema):
 
 @forum_bp.get("/comments/user/<user_id>", responses={"200": GetCommentByUserIdResponse})
 def get_comments_by_user_id(path: ByUserPathSchema):
+    logger.debug("Buscando comentário pelo ID do usuário.")
     variables = {"userID": path.user_id}
 
     response = requests.post(
@@ -163,6 +177,7 @@ def get_comments_by_user_id(path: ByUserPathSchema):
     comment_data = response.json()
 
     if comment_data.get("errors"):
+        logger.warning(f"Erro na busca de comentários: {comment_data.get("errors")}.")
         return comment_data, 400
 
     return comment_data["data"], 200
@@ -170,6 +185,7 @@ def get_comments_by_user_id(path: ByUserPathSchema):
 
 @forum_bp.get("/comments/period", responses={"200": GetCommentByPeriodResponse})
 def get_comments_by_period(query: ByPeriodQueryParamSchema):
+    logger.debug("Buscando comentário pelo periodo em que foi criado.")
     variables = {"initialDate": query.initialDate, "endDate": query.endDate}
 
     response = requests.post(
@@ -179,6 +195,7 @@ def get_comments_by_period(query: ByPeriodQueryParamSchema):
     comment_data = response.json()
 
     if comment_data.get("errors"):
+        logger.warning(f"Erro na busca de comentários: {comment_data.get("errors")}.")
         return comment_data, 400
 
     return comment_data["data"], 200
@@ -188,7 +205,8 @@ def get_comments_by_period(query: ByPeriodQueryParamSchema):
 def add_article(body: AddArticleBodySchema):
     user = session.get("user")
     if not user:
-        return {"message": "User not logged in!"}, 403
+        logger.warning("Usuário não logado!")
+        return {"error": "User not logged in!"}, 403
 
     user_info = user.get("userinfo")
     user_data = {
@@ -203,14 +221,19 @@ def add_article(body: AddArticleBodySchema):
     }
     variables.update(user_data)
 
+    logger.debug(f"Adicionando artigo de usuário '{user_data.get("userNickname")}'")
     response = requests.post(
         url=forum_api_url, json={"query": add_article_mutation, "variables": variables}
     )
     article_data = response.json()
     result = article_data.get("data")
     if article_data.get("errors") or result.get("addArticle").get("errors"):
-        return article_data, 400
+        erro_msg = article_data.get("errors") or result.get("addArticle").get("errors")
+        logger.warning(f"Erro ao adicionar artigo: {erro_msg}")
 
+        return article_data, 400
+    
+    logger.debug(f"Artigo de {user_data.get("userNickname")} adicionado com sucesso.")
     return article_data["data"], 200
 
 
@@ -218,7 +241,8 @@ def add_article(body: AddArticleBodySchema):
 def remove_article(path: ArticlePathSchema):
     user = session.get("user")
     if not user:
-        return {"message": "User not logged in!"}, 403
+        logger.warning("Usuário não logado!")
+        return {"error": "User not logged in!"}, 403
 
     user_info = user.get("userinfo")
     user_data = {
@@ -230,6 +254,7 @@ def remove_article(path: ArticlePathSchema):
     variables = {"articleID": path.article_id}
     variables.update(user_data)
 
+    logger.debug(f"Removendo artigo {path.article_id} de usuário '{user_data.get("userNickname")}'")
     response = requests.post(
         url=forum_api_url,
         json={"query": remove_article_mutation, "variables": variables},
@@ -237,8 +262,12 @@ def remove_article(path: ArticlePathSchema):
     article_data = response.json()
     result = article_data.get("data")
     if article_data.get("errors") or result.get("removeArticle").get("errors"):
+        erro_msg = article_data.get("errors") or result.get("removeArticle").get("errors")
+        logger.warning(f"Erro ao remover artigo: {erro_msg}")
+
         return article_data, 400
 
+    logger.debug(f"Artigo de {user_data.get("userNickname")} removido com sucesso.")
     return article_data["data"], 200
 
 
@@ -246,7 +275,8 @@ def remove_article(path: ArticlePathSchema):
 def update_article(path: ArticlePathSchema, body: UpdateArticleBodySchema):
     user = session.get("user")
     if not user:
-        return {"message": "User not logged in!"}, 403
+        logger.warning("Usuário não logado!")
+        return {"error": "User not logged in!"}, 403
 
     user_info = user.get("userinfo")
     user_data = {
@@ -262,6 +292,7 @@ def update_article(path: ArticlePathSchema, body: UpdateArticleBodySchema):
     }
     variables.update(user_data)
 
+    logger.debug(f"Atualizando artigo {path.article_id} de usuário '{user_data.get("userNickname")}'")
     response = requests.post(
         url=forum_api_url,
         json={"query": update_article_mutation, "variables": variables},
@@ -269,8 +300,12 @@ def update_article(path: ArticlePathSchema, body: UpdateArticleBodySchema):
     article_data = response.json()
     result = article_data.get("data")
     if article_data.get("errors") or result.get("updateArticle").get("errors"):
+        erro_msg = article_data.get("errors") or result.get("updateArticle").get("errors")
+        logger.warning(f"Erro ao atualizar artigo: {erro_msg}")
+
         return article_data, 400
 
+    logger.debug(f"Artigo de {user_data.get("userNickname")} atualizado com sucesso.")
     return result, 200
 
 
@@ -278,7 +313,8 @@ def update_article(path: ArticlePathSchema, body: UpdateArticleBodySchema):
 def add_comment(body: AddCommentBodySchema):
     user = session.get("user")
     if not user:
-        return {"message": "User not logged in!"}, 403
+        logger.warning("Usuário não logado!")
+        return {"error": "User not logged in!"}, 403
 
     user_info = user.get("userinfo")
     user_data = {
@@ -295,14 +331,19 @@ def add_comment(body: AddCommentBodySchema):
     }
     variables.update(user_data)
 
+    logger.debug(f"Adicionando comentário de usuário '{user_data.get("userNickname")}'")
     response = requests.post(
         url=forum_api_url, json={"query": add_comment_mutation, "variables": variables}
     )
     comment_data = response.json()
     result = comment_data.get("data")
     if comment_data.get("errors") or result.get("addComment").get("errors"):
+        erro_msg = comment_data.get("errors") or result.get("addComment").get("errors")
+        logger.warning(f"Erro ao adicionar comentário: {erro_msg}")
+
         return comment_data, 400
 
+    logger.debug(f"Comentário de {user_data.get("userNickname")} adicionado com sucesso.")
     return result, 200
 
 
@@ -310,7 +351,8 @@ def add_comment(body: AddCommentBodySchema):
 def remove_comment(path: CommentPathSchema):
     user = session.get("user")
     if not user:
-        return {"message": "User not logged in!"}, 403
+        logger.warning("Usuário não logado!")
+        return {"error": "User not logged in!"}, 403
 
     user_info = user.get("userinfo")
     user_data = {
@@ -322,6 +364,7 @@ def remove_comment(path: CommentPathSchema):
     variables = {"commentID": path.comment_id}
     variables.update(user_data)
 
+    logger.debug(f"Removendo comentário de usuário '{user_data.get("userNickname")}'")
     response = requests.post(
         url=forum_api_url,
         json={"query": remove_comment_mutation, "variables": variables},
@@ -329,8 +372,12 @@ def remove_comment(path: CommentPathSchema):
     comment_data = response.json()
     result = comment_data.get("data")
     if comment_data.get("errors") or result.get("removeComment").get("errors"):
+        erro_msg = comment_data.get("errors") or result.get("removeComment").get("errors")
+        logger.warning(f"Erro ao remover comentário: {erro_msg}")
+
         return comment_data, 400
 
+    logger.debug(f"Comentário de {user_data.get("userNickname")} removido com sucesso.")
     return result, 200
 
 
@@ -338,7 +385,8 @@ def remove_comment(path: CommentPathSchema):
 def update_comment(path: CommentPathSchema, body: UpdateCommentBodySchema):
     user = session.get("user")
     if not user:
-        return {"message": "User not logged in!"}, 403
+        logger.warning("Usuário não logado!")
+        return {"error": "User not logged in!"}, 403
 
     user_info = user.get("userinfo")
     user_data = {
@@ -353,6 +401,7 @@ def update_comment(path: CommentPathSchema, body: UpdateCommentBodySchema):
     }
     variables.update(user_data)
 
+    logger.debug(f"Atualizando comentário de usuário '{user_data.get("userNickname")}'")
     response = requests.post(
         url=forum_api_url,
         json={"query": update_comment_mutation, "variables": variables},
@@ -360,6 +409,10 @@ def update_comment(path: CommentPathSchema, body: UpdateCommentBodySchema):
     comment_data = response.json()
     result = comment_data.get("data")
     if comment_data.get("errors") or result.get("updateComment").get("errors"):
+        erro_msg = comment_data.get("errors") or result.get("updateComment").get("errors")
+        logger.warning(f"Erro ao atualizar comentário: {erro_msg}")
+
         return comment_data, 400
 
+    logger.debug(f"Comentário de {user_data.get("userNickname")} atualizado com sucesso.")
     return result, 200

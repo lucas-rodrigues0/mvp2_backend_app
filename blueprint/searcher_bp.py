@@ -6,6 +6,7 @@ from flask_openapi3 import APIBlueprint
 from flask_openapi3 import Tag
 
 from schemas import QuerySchema, SearcherResponse
+from logger import logger
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -30,4 +31,7 @@ def get_searcher(query: QuerySchema):
         searcher_data = response.json()
         return searcher_data["data"]
 
+    logger.warning(
+        f"Erro na busca pelo termo {query.term}. Response status code: {response.status_code}."
+    )
     return {"status_code": response.status_code, "error": "error"}

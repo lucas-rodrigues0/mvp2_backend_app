@@ -8,7 +8,7 @@ from flask_openapi3 import OpenAPI, Info
 from flask import redirect, session, url_for, request
 from flask_cors import CORS
 
-
+from logger import logger
 from blueprint import searcher_bp, forum_bp
 
 
@@ -39,6 +39,7 @@ oauth.register(
 
 @app.route("/login")
 def login():
+    logger.debug("Redireciona para login no provedor Auth0.")
     return oauth.auth0.authorize_redirect(
         redirect_uri=url_for("callback", _external=True)
     )
@@ -47,6 +48,7 @@ def login():
 @app.route("/callback", methods=["GET", "POST"])
 def callback():
     token = oauth.auth0.authorize_access_token()
+    logger.debug("Adiciona info de usuário logado no session cookie.")
     session["user"] = token
     return redirect("/")
 
@@ -54,6 +56,7 @@ def callback():
 @app.route("/logout")
 def logout():
     session.clear()
+    logger.debug("Limpa o session cookie de usuario que estava logado.")
     return redirect(
         "https://"
         + env.get("AUTH0_DOMAIN")
