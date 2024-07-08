@@ -78,7 +78,7 @@ def home():
             "user_info": user.get("userinfo"),
         }
     else:
-        return {"Fazer o login": "localhost:3000/login"}
+        return {"Fazer o login": "/login"}
 
 
 app.register_api(searcher_bp)

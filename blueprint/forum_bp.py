@@ -79,7 +79,7 @@ def get_articles():
     return article_data["data"], 200
 
 
-@forum_bp.get("/article/<article_id>", responses={"200": GetArticleByIdResponse})
+@forum_bp.get("/articles/id/<article_id>", responses={"200": GetArticleByIdResponse})
 def get_article_by_id(path: ArticlePathSchema):
     variables = {"articleID": path.article_id}
 
@@ -137,7 +137,7 @@ def get_comments():
     return comment_data["data"], 200
 
 
-@forum_bp.get("/comment/<comment_id>", responses={"200": GetCommentByIdResponse})
+@forum_bp.get("/comments/id/<comment_id>", responses={"200": GetCommentByIdResponse})
 def get_comment_by_id(path: CommentPathSchema):
     variables = {"commentID": path.comment_id}
 
