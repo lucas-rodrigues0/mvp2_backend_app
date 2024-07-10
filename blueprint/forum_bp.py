@@ -55,12 +55,14 @@ if ENV_FILE:
 
 
 forum_api_url = env.get("FORUM_API_URL")
-
-tag = Tag(name="Forum", description="Some Forum")
+tag = Tag(
+    name="Forum",
+    description="Rotas para o serviço Forum API. GET/POST/PUT/DELETE para Artigos e Comentários.",
+)
 
 
 forum_bp = APIBlueprint(
-    "/forum",
+    "forum",
     __name__,
     url_prefix="/api",
     abp_tags=[tag],
@@ -71,7 +73,11 @@ forum_bp = APIBlueprint(
 
 @forum_bp.get("/articles", responses={"200": GetArticlesResponse})
 def get_articles():
+    """Busca todos os Artigos existentes no banco de dados.
+    Utiliza a 'articles_query' para a requisição na Api GraphQL do serviço Forum API.
+    """
     logger.debug("Buscando todos artigos existentes.")
+
     response = requests.post(url=forum_api_url, json={"query": articles_query})
     article_data = response.json()
 
@@ -84,7 +90,11 @@ def get_articles():
 
 @forum_bp.get("/articles/id/<article_id>", responses={"200": GetArticleByIdResponse})
 def get_article_by_id(path: ArticlePathSchema):
+    """Busca um Artigo específico pelo seu ID <article_id> indicado na path da requisição.
+    Utiliza a 'article_by_id_query' para a requisição na Api GraphQL do serviço Forum API.
+    """
     logger.debug("Buscando artigo pelo seu ID.")
+
     variables = {"articleID": path.article_id}
 
     response = requests.post(
@@ -101,7 +111,12 @@ def get_article_by_id(path: ArticlePathSchema):
 
 @forum_bp.get("/articles/user/<user_id>", responses={"200": GetArticleByUserResponse})
 def get_article_by_user_id(path: ByUserPathSchema):
+    """Busca todos os Artigos que foram criados pelo usuário com ID <user_id>
+    indicado na path da requisição.
+    Utiliza a 'articles_by_user_id_query' para a requisição na Api GraphQL do serviço Forum API.
+    """
     logger.debug("Buscando artigo pelo ID do usuário.")
+
     variables = {"userID": path.user_id}
 
     response = requests.post(
@@ -119,7 +134,17 @@ def get_article_by_user_id(path: ByUserPathSchema):
 
 @forum_bp.get("/articles/period", responses={"200": GetArticleByPeriodResponse})
 def get_article_by_period(query: ByPeriodQueryParamSchema):
+    """Busca todos os Artigos que foram criados dentro de um período.
+    Os paramêtros de query 'initialDate' e 'endDate' devem ser strings e ter o
+    formato de dd-mm-aaaa para as datas de inicio e fim do período.
+
+    ex: http://<domain>/api/articles/period?initialDate=01-07-2024&endDate=10-07-2024
+    para buscar entre os dias 01 e 10 de julho de 2024.
+
+    Utiliza a 'articles_by_period_query' para a requisição na Api GraphQL do serviço Forum API.
+    """
     logger.debug("Buscando artigo pelo periodo em que foi criado.")
+
     variables = {"initialDate": query.initialDate, "endDate": query.endDate}
 
     response = requests.post(
@@ -137,7 +162,11 @@ def get_article_by_period(query: ByPeriodQueryParamSchema):
 
 @forum_bp.get("/comments", responses={"200": GetCommentsResponse})
 def get_comments():
+    """Busca todos os Comentários existentes no banco de dados e os artigos a qual são relacionados.
+    Utiliza a 'comments_query' para a requisição na Api GraphQL do serviço Forum API.
+    """
     logger.debug("Buscando comentários existentes.")
+
     response = requests.post(url=forum_api_url, json={"query": comments_query})
     comment_data = response.json()
 
@@ -150,7 +179,11 @@ def get_comments():
 
 @forum_bp.get("/comments/id/<comment_id>", responses={"200": GetCommentByIdResponse})
 def get_comment_by_id(path: CommentPathSchema):
+    """Busca um Comentário específico pelo seu ID <article_id> indicado na path da requisição.
+    Utiliza a 'comment_by_id_query' para a requisição na Api GraphQL do serviço Forum API.
+    """
     logger.debug("Buscando comentário pelo seu ID.")
+
     variables = {"commentID": path.comment_id}
 
     response = requests.post(
@@ -167,7 +200,12 @@ def get_comment_by_id(path: CommentPathSchema):
 
 @forum_bp.get("/comments/user/<user_id>", responses={"200": GetCommentByUserIdResponse})
 def get_comments_by_user_id(path: ByUserPathSchema):
+    """Busca todos os Comentários que foram criados pelo usuário com ID <user_id>
+    indicado na path da requisição.
+    Utiliza a 'comments_by_user_id_query' para a requisição na Api GraphQL do serviço Forum API.
+    """
     logger.debug("Buscando comentário pelo ID do usuário.")
+
     variables = {"userID": path.user_id}
 
     response = requests.post(
@@ -185,7 +223,17 @@ def get_comments_by_user_id(path: ByUserPathSchema):
 
 @forum_bp.get("/comments/period", responses={"200": GetCommentByPeriodResponse})
 def get_comments_by_period(query: ByPeriodQueryParamSchema):
+    """Busca todos os Comentários que foram criados dentro de um período.
+    Os paramêtros de query 'initialDate' e 'endDate' devem ser strings e ter o
+    formato de dd-mm-aaaa para as datas de inicio e fim do período.
+
+    ex: http://<domain>/api/articles/period?initialDate=01-07-2024&endDate=10-07-2024
+    para buscar entre os dias 01 e 10 de julho de 2024.
+
+    Utiliza a 'comments_by_period_query' para a requisição na Api GraphQL do serviço Forum API.
+    """
     logger.debug("Buscando comentário pelo periodo em que foi criado.")
+
     variables = {"initialDate": query.initialDate, "endDate": query.endDate}
 
     response = requests.post(
@@ -203,6 +251,26 @@ def get_comments_by_period(query: ByPeriodQueryParamSchema):
 
 @forum_bp.post("/article", responses={"200": AddArticleResponse})
 def add_article(body: AddArticleBodySchema):
+    """Insere um novo Artigo no banco de dados. Necessita que se esteja
+    autenticado para as informações de usuário.
+
+    No corpo da requisição deverá ter:
+    {
+        "title": <Título do artigo a ser inserido>,
+        "content": <Texto de conteúdo do artigo>
+    }
+
+    Utiliza a 'add_article_mutation' para a requisição na Api GraphQL do serviço Forum API.
+
+    Retorna:
+    {
+        "addArticle": {
+            "articleId": <ID do artigo inserido>,
+            "title": <Título do artigo>,
+            "userNickname": <Usuário que inseriu o artigo>
+        }
+    }
+    """
     user = session.get("user")
     if not user:
         logger.warning("Usuário não logado!")
@@ -239,6 +307,14 @@ def add_article(body: AddArticleBodySchema):
 
 @forum_bp.delete("/article/<article_id>", responses={"200": RemoveArticleResponse})
 def remove_article(path: ArticlePathSchema):
+    """Remove um Artigo específico pelo seu ID <article_id> indicado na path da requisição.
+    Necessita que se esteja autenticado para as informações de usuário.
+    Somente o usuário que criou o artigo é quem pode removê-lo.
+
+    Utiliza a 'remove_article_mutation' para a requisição na Api GraphQL do serviço Forum API.
+
+    Retorna menssagem de confirmação com o ID do artigo.
+    """
     user = session.get("user")
     if not user:
         logger.warning("Usuário não logado!")
@@ -277,6 +353,30 @@ def remove_article(path: ArticlePathSchema):
 
 @forum_bp.put("/article/<article_id>", responses={"200": UpdateArticleResponse})
 def update_article(path: ArticlePathSchema, body: UpdateArticleBodySchema):
+    """Atualiza Artigo específico pelo seu ID <article_id> indicado na path da requisição.
+    Necessita que se esteja autenticado para as informações de usuário.
+    Somente o usuário que criou o artigo é quem pode atualizá-lo.
+
+    No corpo da requisição deverá ter opcionalmente:
+    {
+        "title": <Título do artigo a ser inserido>,
+        "content": <Texto de conteúdo do artigo>
+    }
+    Pode atualizar somente o 'title', o 'content', ou ambos.
+
+    Utiliza a 'update_article_mutation' para a requisição na Api GraphQL do serviço Forum API.
+
+    Retorna:
+    {
+        "updateArticle": {
+            "articleId": <ID do artigo inserido>,
+            "title": <Título do artigo atualizado>,
+            "content": <Conteudo do artigo atualizado>,
+            "userNickname": <Usuário que inseriu o artigo>,
+            "updatedAt": <data da atualização>
+        }
+    }
+    """
     user = session.get("user")
     if not user:
         logger.warning("Usuário não logado!")
@@ -319,6 +419,31 @@ def update_article(path: ArticlePathSchema, body: UpdateArticleBodySchema):
 
 @forum_bp.post("/comment", responses={"200": AddCommentResponse})
 def add_comment(body: AddCommentBodySchema):
+    """Insere um novo Comentário no banco de dados. Necessita que se esteja
+    autenticado para as informações de usuário.
+
+    No corpo da requisição deverá ter:
+    {
+        "article_id": <ID do artigo a qual se relaciona>
+        "content": <Texto de conteúdo do comentário>,
+        "is_reply": <Opcional booleano para indicar se é uma resposta default=False>,
+        "comment_reply": <Opcional ID do comentário a qual é uma responsta default=None>
+    }
+
+    Utiliza a 'add_comment_mutation' para a requisição na Api GraphQL do serviço Forum API.
+
+    Retorna:
+    {
+        "addComment": {
+            "articleId": <ID do artigo a qual se relaciona>,
+            "commentId": <ID do comentário inserido>,
+            "commentReply": <ID do comentário a qual é uma responsta | null>,
+            "content": <Texto de conteúdo do comentário>,
+            "isReply": <true | false>,
+            "userNickname": <Usuário que inseriu o comentário>
+        }
+    }
+    """
     user = session.get("user")
     if not user:
         logger.warning("Usuário não logado!")
@@ -359,6 +484,14 @@ def add_comment(body: AddCommentBodySchema):
 
 @forum_bp.delete("/comment/<comment_id>", responses={"200": RemoveCommentResponse})
 def remove_comment(path: CommentPathSchema):
+    """Remove um Comentário específico pelo seu ID <comment_id> indicado na path da requisição.
+    Necessita que se esteja autenticado para as informações de usuário.
+    Somente o usuário que criou o comentário é quem pode removê-lo.
+
+    Utiliza a 'remove_comment_mutation' para a requisição na Api GraphQL do serviço Forum API.
+
+    Retorna menssagem de confirmação com o ID do comentário.
+    """
     user = session.get("user")
     if not user:
         logger.warning("Usuário não logado!")
@@ -395,6 +528,29 @@ def remove_comment(path: CommentPathSchema):
 
 @forum_bp.put("/comment/<comment_id>", responses={"200": UpdateCommentResponse})
 def update_comment(path: CommentPathSchema, body: UpdateCommentBodySchema):
+    """Atualiza Comentário específico pelo seu ID <comment_id> indicado na path da requisição.
+    Necessita que se esteja autenticado para as informações de usuário.
+    Somente o usuário que criou o comentário é quem pode atualizá-lo.
+
+    No corpo da requisição deverá ter:
+    {
+        "content": <Texto de conteúdo do comentário>
+    }
+
+    Utiliza a 'update_comment_mutation' para a requisição na Api GraphQL do serviço Forum API.
+
+    Retorna:
+    {
+        "updateComment": {
+            "articleId": <ID do artigo a qual se relaciona>,
+            "commentId": <ID do comentário atualizado>,
+            "commentReply": <ID do comentário a qual é uma responsta | null>,
+            "content": <Texto de conteúdo do comentário>,
+            "isReply": <true | false>,
+            "userNickname": <Usuário que inseriu o comentário>
+        }
+    }
+    """
     user = session.get("user")
     if not user:
         logger.warning("Usuário não logado!")

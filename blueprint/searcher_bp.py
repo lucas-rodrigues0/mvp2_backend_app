@@ -13,9 +13,7 @@ if ENV_FILE:
     load_dotenv(ENV_FILE)
 
 searcher_api_url = env.get("SEARCH_API_URL")
-
 tag = Tag(name="Searcher", description="Some Searcher")
-
 
 searcher_bp = APIBlueprint(
     "/searcher", __name__, url_prefix="/api", abp_tags=[tag], doc_ui=True
@@ -24,7 +22,25 @@ searcher_bp = APIBlueprint(
 
 @searcher_bp.get("/searcher", responses={"200": SearcherResponse})
 def get_searcher(query: QuerySchema):
+    """Rota para realizar uma busca de texto completo no serviço Full Text Searcher API.
+    É utilizado o paramêtro de query '?term=' com o termo a ser buscado no serviço.
 
+    ex: http://<domain>/api/searcher?term='direito moradia' para buscar pelos termos 'direito' e 'moradia'
+
+    retorna um dicionario de resultados com a seguinte estrutura:
+    {
+        results: {
+            <número da pagina do documento>: {
+                _page_info: {
+                    Capitulo: <Capitulo ao qual o documento pertence>,
+                    Titulo: <Titulo ao qual o documento pertence>
+                },
+                content: <Conteúdo do documento>
+            }
+        }
+        total_count: <número de documentos onde o(s) termo(s) foram encontrados>
+    }
+    """
     formatted_url = searcher_api_url + f"/searcher?query={query.term}"
     response = requests.get(url=formatted_url)
     if response.status_code == 200:
