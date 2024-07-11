@@ -28,7 +28,7 @@ Também oferece uma sessão de fórum para artigos e comentários, sendo assim u
 
 Esse projeto é um MVP e pretende evoluir para que, tanto o pesquisador de texto quanto a sessão de artigos, possam desenvolver novas funcionalidades que irão melhorar a busca de texto e ampliar a sessão do fórum, para que usuários possam trocar conhecimento respondendo a comentários existentes, inserir outros conteúdos além de texto.  
 
-Esse é um sistema implementado em micro serviços, sendo esse componente chamado de `Mv2 Backend App` ser o componente principal que faz a integração com os demais componentes. A seguir é apresentado um fluxograma para apresentar a arquitetura e seus componentes.  
+Esse é um sistema implementado em micro serviços. Esse componente chamado de `MVP2 Backend APP` é o componente principal por fazer a integração com os demais componentes. A seguir é apresentado um fluxograma para apresentar a arquitetura do sistema e seus componentes.  
 
 
 ## Tecnologias
@@ -48,7 +48,8 @@ O sistema é composto por três APIs e um serviço externo (Auth0). São chamado
 - FORUM_API
 - Auth0 (serviço externo de Autenticação de usuários)
 
-Os detalhes das APIs Full Text Searcher e Forum estão descritos em seus respectivos documentos. Sendo aqui apenas referenciados para melhor compreensão.  
+Os detalhes das APIs Full Text Searcher e Forum estão descritos em seus respectivos documentos. Sendo aqui apenas referenciados para melhor compreensão. 
+Nos repositórios de [Full Text Searcher API](https://github.com/lucas-rodrigues0/full_text_searcher_api) e [Forum API](https://github.com/lucas-rodrigues0/forum_api) se encontra a documentação específica de cada um.
 O fluxograma a seguir apresenta as relações entre os componentes.
 
 ![figura 1](./docs/mvp2_fluxograma.jpg)
@@ -92,19 +93,19 @@ O arquivo `docker-compose.yml` incluído aqui nesse repositório segue as instru
 └── docker-compose.yml
 ```
 
-O diretório `database` é criado através do Compose como volume do container do postgres. A estrutura dos diretórios dos serviços `forum api` e `full text searcher api` são apresentados em seus respectivos documentos.
-O arquivo de docker compose deverá estar na raiz junto com os diretórios de todos os serviços. 
+O diretório `database` é criado através do docker compose como volume do container do postgres. A estrutura dos diretórios dos serviços `forum api` e `full text searcher api` são apresentados em seus respectivos documentos.
+O arquivo de docker-compose.yml deverá estar no diretório raiz junto com os diretórios de todos os serviços para que a orquestração possa fazer o build das respectivas imagens. 
 
 ## Backend APP Integração
 
-O serviço chamado de Backend App é considerado o componente principal por ter a responsabilidade de fazer a integração entre uma possível interface de usuário com os serviços de busca de texto completo e do fórum de artigos, além de fazer a conexão com o provedor de autenticação AuthO que também é o responsável pelo gerenciamento desses usuários.  
-Sendo assim, esse é o componente que irá interligar os usuários aos conteúdos postados na sessão do fórum de artigos.
+O serviço chamado de Backend App é considerado o componente principal por ter a responsabilidade de fazer a integração entre uma possível interface de usuário com os serviços de busca de texto completo e com o fórum de artigos, além de fazer a conexão com o provedor de autenticação AuthO que também é o responsável pelo gerenciamento desses usuários.  
+Sendo assim, esse é o componente que irá interligar os usuários aos conteúdos postados na sessão do fórum de artigos, assim como acessar o buscador de texto completo.
 
 
 #### Auth0
 Para a autenticação no APP é utilizado o provedor de autenticação Auth0.  
-Quando o usuário acessa o endpoint `login` ele é redirecionado para o serviço Auth0, que fica responsável pela autenticação e o armazenamento dos dados de usuário.  
-Com o usuário autenticado, o Auth0 retorna para o APP o token de acesso assim como os dados necessários do usuário. Esses dados são salvos no `session cookie` fornecido pelo Flask.  
+Quando o usuário acessa o endpoint `/login` ele é redirecionado para o serviço Auth0, que fica responsável pela autenticação e o armazenamento dos dados de usuário.  
+Com o usuário autenticado, o Auth0 retorna para o APP o token de acesso assim como os dados necessários do usuário (ID, email, nickname). Esses dados são salvos no `session cookie` fornecido pelo Flask.  
 Ao acessar o endpoint `logout` esses dados são removidos.  
 
 Para a configuração necessária, é preciso ter as credenciais do Aplicativo criado na sua conta Auth0 conforme a [documentação](https://auth0.com/docs/get-started)  
@@ -118,22 +119,20 @@ APP_SECRET_KEY: gerar uma chave aleatória de segurança. pode executar o comand
 
 No arquivo `.env-example` possui as variáveis necessárias para o serviço do App.  
 
-[!IMPORTANT]
-
-Para as rotas que realizam alguma escrita no banco, é preciso informações do usuário, sendo necessário que este ainda esteja autenticado. A verificação se o usuário está autenticado é feita pelo session cookie. Para testes nessas rotas específicas é necessário inserir o session cookie retornado do Auth0 após uma autenticação, junto da requisição para a rota. 
-
-Existe a variável de ambiente `DEV_ENV` que sendo configurada como True irá exibir esse session cookie retornado pelo Auth0 na rota home ("/") do APP.
-Esse cookie pode ser utilizado para testar requisições específicas que necessitem de um usuário autenticado. Para isso utilize o Postman ou Insomnia, e acrescentá-lo pelo manage cookie. As informações necessárias para inserir esse session cookie no Postman ou Insomnia são:
-- Domain = domain do container do APP (127.0.0.1)
-- Path = /
-- Expires = Opcional
-- session = valor retornado pela autenticação  
+> [!IMPORTANT]  
+> Para as rotas que realizam alguma escrita no banco, é preciso informações do usuário, sendo necessário que este ainda esteja autenticado. A verificação se o usuário está autenticado é feita pelo session cookie. Para testes nessas rotas específicas é necessário inserir o session cookie retornado do Auth0 após uma autenticação, junto da requisição para a rota.  
+> Existe a variável de ambiente `DEV_ENV` que sendo configurada como True irá exibir esse session cookie retornado pelo Auth0 na rota home ("/") do APP quando o usuário está autenticado.  
+> Esse cookie pode ser utilizado para testar essas requisições específicas que necessitem de um usuário autenticado. Para isso utilize o Postman ou Insomnia, e acrescentá-lo ao manage cookie. As informações necessárias para inserir esse session cookie pelo Postman ou Insomnia são:  
+> - Domain = domain do container do APP (ex: 127.0.0.1)
+> - Path = /
+> - Expires = Opcional
+> - session = valor do cookie retornado pela autenticação  
 
 
 #### Forum API
 O serviço é uma Api GraphQL que apresenta artigos publicados pelos usuários.
 No repositório do [Forum API](https://github.com/lucas-rodrigues0/forum_api) existe mais informação sobre o serviço.  
-Para a Api do fórum de artigos é necessária a variável de ambiente com o endereço do respectivo container do serviço.  
+Para a Api do fórum de artigos é necessária a variável de ambiente com o endereço do respectivo container do serviço. Exemplo:  
 ```
 FORUM_API_URL=http://forum-api:4444/graphql
 ```
@@ -141,7 +140,7 @@ FORUM_API_URL=http://forum-api:4444/graphql
 #### Full Text Searcher API
 O serviço é uma Api REST que realiza uma busca de texto completo em um documento PDF da Constituição Federal brasileira. O documento é indexado pela biblioteca python Whoosh.
 No repositório do [Full Text Searcher API](https://github.com/lucas-rodrigues0/full_text_searcher_api) existe mais informação sobre o serviço.  
-Para a Api do Searcher é necessária a variável de ambiente com o endereço do respectivo container do serviço.  
+Para a Api do Searcher é necessária a variável de ambiente com o endereço do respectivo container do serviço. Exemplo:  
 ```
 SEARCH_API_URL=http://searcher-api:4000
 ```
@@ -150,7 +149,7 @@ SEARCH_API_URL=http://searcher-api:4000
 ## Configuração e Instalação
 
 As variáveis API_PORT e DEBUG são opcionais para o desenvolvimento. No App é sugerido utilizar a porta 5000, mas caso queira trocar, alterar esse valor pela  variável é possível, mas será necessário alterar as portas no Dockerfile e docker-compose para as portas serem expostas corretamente.
-A variável Debug é para o desenvolvimento da aplicação Flask. É realizado o auto reload quando há alteração de código.
+A variável Debug é apenas para o desenvolvimento da aplicação Flask. Ele permite que o Flask rode em debug mode, e é realizado o auto reload quando há alteração de código.
 
 ### Utilizando o Docker compose
 É necessário ter instalado o [Docker](https://docs.docker.com/engine/install/) e o [Docker Compose](https://docs.docker.com/compose/install/) para subir os serviços automaticamente.  
