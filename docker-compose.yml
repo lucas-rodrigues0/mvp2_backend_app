@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres
+    restart: unless-stopped
+    container_name: db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./database/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  backend-app:
+    build: ./mvp2_backend_app/
+    container_name: backend-app
+    ports:
+      - '5000:5000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  searcher-api:
+    build: ./full_text_searcher_api/
+    container_name: searcher-api
+    ports:
+      - '4000:4000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  forum-api:
+    build: ./forum_api/
+    container_name: forum-api
+    ports:
+      - '4444:4444'
+    depends_on:
+      db:
+        condition: service_healthy
